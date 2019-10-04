@@ -1,0 +1,91 @@
+<?php 
+$order = $block->getViewModel()->getOrder();
+
+?>
+<?php echo __('Custom template file content.'); ?>
+<?php //$order = $block->getOrder(); ?>
+<?php
+/** **/
+// Fetch specific order information
+$incrementID = $order->getIncrementId();
+$grandTotal = $order->getGrandTotal();
+$subTotal =  $order->getSubtotal();
+
+// Fetch order customer information
+$customerId = $order->getCustomerId();
+$customerEmail = $order->getCustomerEmail();
+$customerFirstName = $order->getCustomerFirstname();
+$customerLastName = $order->getCustomerLastname();
+
+$orderItems = [];
+foreach ($order->getAllItems() as $item)
+{
+    //products=PRODUCTS_LIST(PRODUCTID|PRODUCTSKU|PRODUCTNAME|PRODUCTCATEGORY|PRICE|QUANTITY)
+    $id = $item->getId();
+    $orderItems = array_merge($orderItems, array($item->getProductId(), urlencode($item->getSku()), htmlentities(urlencode($item->getName())), '', $item->getBasePrice(), (int)$item->getQtyOrdered()));
+    
+}
+
+?>
+
+<!-- Offer Conversion: -->
+<iframe
+    src="https://studentbeansnetwork.go2cloud.org/aff_l?offer_id=121&adv_sub=<?php echo $incrementID ?>&amount=<?php echo $subTotal ?>"
+    scrolling="no" frameborder="0" width="1" height="1"></iframe>
+<!-- // End Offer Conversion -->
+<div id="tracking-materials"></div>
+
+<script>
+require([
+    'jquery',
+    'jquery/jquery.cookie'
+], function($) {
+    var getUrlParameter = function getUrlParameter(sParam) {
+        var sPageURL = window.location.search.substring(1),
+            sURLVariables = sPageURL.split('&'),
+            sParameterName,
+            i;
+
+        for (i = 0; i < sURLVariables.length; i++) {
+            sParameterName = sURLVariables[i].split('=');
+
+            if (sParameterName[0] === sParam) {
+                return sParameterName[1] === undefined ? true : decodeURIComponent(sParameterName[1]);
+            }
+        }
+        return '';
+    };
+    var IncrementId = '<?php echo $order->getIncrementId(); ?>';
+    var GrandTotal = '<?php echo $order->getGrandTotal(); ?>';
+    $(document).ready(function() {
+        var _content = '';
+        // Studen bean.
+        studenBean = $.cookie('studenttracking');
+        if (studenBean !== null && studenBean != '') {
+            var transactionId = studenBean;
+            var trackingUrl = "http://tracking.studentbeans.network/aff_lsr?transaction_id=" +
+                transactionId + "&amount=" + GrandTotal + "&adv_sub=" + IncrementId;
+            var imge = "<img src='" + trackingUrl + "' width='0' height='0' id='student_bean' />";
+            _content = _content + imge;
+        }
+
+        //Affiliatefuture
+        affiliate = $.cookie('camptracking');
+        if (affiliate !== null && affiliate != '') {
+            var products = '<?php echo addslashes("PRODUCT_LIST(".implode("|", $orderItems).")"); ?>';
+            var compaign_id = affiliate;
+
+            var track_url = "https://scripts.affiliatefuture.com/AFSaleV5.aspx?orderID=" + IncrementId +
+                "&orderValue=" + GrandTotal +
+                "&merchant=7213&payoutCodes=FIVETECH," + GrandTotal +
+                "&offlineCode=&voucher=&products=" + products +
+                "&curr=GBP&affc=" + compaign_id +
+                "&r=";
+            var imageTag = "<img src='" + track_url + "' width='0' height='0' id='guid_tracking' />";
+            // set output
+            _content = _content + imageTag;
+        }
+        $("#tracking-materials").html(_content);
+    });
+});
+</script>
